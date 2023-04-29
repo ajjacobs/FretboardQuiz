@@ -100,6 +100,7 @@ void FretboardQuizAudioProcessor::estimateFrequency()
        }
     }
     m_frequency = (getSampleRate() * maxIdx) / fftSize;
+    int midinote = log(m_frequency/440.0)/log(2) * 12 + 69;
 }
 
 
