@@ -71,6 +71,9 @@ private:
     int fifoIndex = 0;                              
     bool nextFFTBlockReady = false;                 
     float scopeData [scopeSize];                    
+
+    void pushNextSampleIntoFifo (float);
+    void estimateFrequency ();
      
 
     //==============================================================================

@@ -10,8 +10,9 @@
 
 //==============================================================================
 FretboardQuizAudioProcessor::FretboardQuizAudioProcessor()
-        : AudioProcessor (BusesProperties().withInput  ("Input",     juce::AudioChannelSet::stereo())           // [1]
-                                           .withOutput ("Output",    juce::AudioChannelSet::stereo()))
+        : AudioProcessor (BusesProperties().withInput  ("Input",     juce::AudioChannelSet::stereo())),
+          forwardFFT(fftOrder),
+          window (fftSize, juce::dsp::WindowingFunction<float>::blackman)
 {
 }
 
@@ -77,12 +78,64 @@ void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    if (buffer.getNumChannels() > 0)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        // for now just assume first channel
+        for ( auto j=0; j < buffer.getNumSamples(); ++j)
+        {
+            pushNextSampleIntoFifo(buffer.getReadPointer(0)[j]);
 
-        // ..do something to the data...
+            if (nextFFTBlockReady)
+            {
+                estimateFrequency();
+                nextFFTBlockReady = false;
+            }
+        }
+
     }
+}
+
+void FretboardQuizAudioProcessor::estimateFrequency()
+{
+    // first apply a windowing function to our data
+    window.multiplyWithWindowingTable (fftData, fftSize);       
+
+    // then render our FFT data..
+    forwardFFT.performFrequencyOnlyForwardTransform (fftData);  
+
+    auto mindB = -100.0f;
+    auto maxdB =    0.0f;
+
+    for (int i = 0; i < scopeSize; ++i)                         
+    {
+        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) scopeSize) * 0.2f);
+        auto fftDataIndex = juce::jlimit (0, fftSize / 2, (int) (skewedProportionX * (float) fftSize * 0.5f));
+        auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (fftData[fftDataIndex])
+                                                            - juce::Decibels::gainToDecibels ((float) fftSize)),
+                                    mindB, maxdB, 0.0f, 1.0f);
+
+        scopeData[i] = level;                                   
+    }
+}
+
+
+void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
+{
+    // if the fifo contains enough data, set a flag to say
+    // that the next frame should now be rendered..
+    if (fifoIndex == fftSize)               // [11]
+    {
+        if (! nextFFTBlockReady)            // [12]
+        {
+            juce::zeromem (fftData, sizeof (fftData));
+            memcpy (fftData, fifo, sizeof (fifo));
+            nextFFTBlockReady = true;
+        }
+
+        fifoIndex = 0;
+    }
+
+    fifo[fifoIndex++] = sample;             // [12]
 }
 
 //==============================================================================
