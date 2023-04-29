@@ -70,7 +70,7 @@ private:
     float fftData [2 * fftSize];                    
     int fifoIndex = 0;                              
     bool nextFFTBlockReady = false;                 
-    float scopeData [scopeSize];                    
+    float m_frequency;
 
     void pushNextSampleIntoFifo (float);
     void estimateFrequency ();

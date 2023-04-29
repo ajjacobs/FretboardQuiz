@@ -23,20 +23,6 @@ bool FretboardQuizAudioProcessor::isBusesLayoutSupported (const BusesLayout& lay
                 && ! layouts.getMainInputChannelSet().isDisabled();
 }
 
-/*
-bool FretboardQuizAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
-{
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    // Some plugin hosts, such as certain GarageBand versions, will only
-    // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
-        return false;
-
-    return true;
-}
-*/
 
 FretboardQuizAudioProcessor::~FretboardQuizAudioProcessor()
 {
@@ -103,19 +89,17 @@ void FretboardQuizAudioProcessor::estimateFrequency()
     // then render our FFT data..
     forwardFFT.performFrequencyOnlyForwardTransform (fftData);  
 
-    auto mindB = -100.0f;
-    auto maxdB =    0.0f;
-
-    for (int i = 0; i < scopeSize; ++i)                         
+    float maxAmp = fftData[0]; int maxIdx = 0;
+    for (int i = 1; i < scopeSize; ++i)                         
     {
-        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) scopeSize) * 0.2f);
-        auto fftDataIndex = juce::jlimit (0, fftSize / 2, (int) (skewedProportionX * (float) fftSize * 0.5f));
-        auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (fftData[fftDataIndex])
-                                                            - juce::Decibels::gainToDecibels ((float) fftSize)),
-                                    mindB, maxdB, 0.0f, 1.0f);
-
-        scopeData[i] = level;                                   
+        const float dat = fftData[i];
+        if (dat > maxAmp) 
+        {
+            maxAmp = dat;
+            maxIdx = i;
+       }
     }
+    m_frequency = (getSampleRate() * maxIdx) / fftSize;
 }
 
 
@@ -137,22 +121,6 @@ void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
 
     fifo[fifoIndex++] = sample;             // [12]
 }
-
-//==============================================================================
-/*
-void FretboardQuizAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
-{
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-}
-
-void FretboardQuizAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
-{
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-}
-*/
 
 //==============================================================================
 // This creates new instances of the plugin..
