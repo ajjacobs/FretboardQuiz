@@ -34,7 +34,8 @@ public:
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==============================================================================
-    juce::AudioProcessorEditor* createEditor() override            { return new juce::GenericAudioProcessorEditor (*this); }
+    //juce::AudioProcessorEditor* createEditor() override            { return new juce::GenericAudioProcessorEditor (*this); }
+    juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override                                { return true; }
     const juce::String getName() const override                    { return "Fretboard Test"; }
     bool acceptsMidi() const override                              { return false; }
@@ -51,6 +52,10 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override        {};
     void setStateInformation (const void* data, int sizeInBytes) override  {};
+
+    //==============================================================================
+    const juce::String& getCurrentTarget() { return m_currentTarget; }
+    const juce::String& getCurrentNote() { return m_currentNote; }
 
     // TODO: These could probably be audio parameters set in the GUI
     enum
@@ -80,7 +85,6 @@ private:
     void checkPitch ();
     float estimateFrequency ();
 
-     
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FretboardQuizAudioProcessor)

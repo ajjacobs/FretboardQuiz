@@ -7,6 +7,7 @@
 */
 
 #include "PluginProcessor.h"
+#include "PluginEditor.h"
 #include "Utils.h"
 
 //==============================================================================
@@ -127,6 +128,12 @@ void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
 
     fifo[fifoIndex++] = sample;             
 }
+
+juce::AudioProcessorEditor* FretboardQuizAudioProcessor::createEditor()
+{
+    return new FretboardQuizAudioProcessorEditor(*this);
+}
+
 
 //==============================================================================
 // This creates new instances of the plugin..
