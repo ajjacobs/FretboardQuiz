@@ -70,10 +70,16 @@ private:
     float fftData [2 * fftSize];                    
     int fifoIndex = 0;                              
     bool nextFFTBlockReady = false;                 
-    float m_frequency;
+    juce::String m_currentTarget;
+    juce::String m_currentNote; 
+    juce::Random rng;
 
+
+    juce::String generateNote();
     void pushNextSampleIntoFifo (float);
-    void estimateFrequency ();
+    void checkPitch ();
+    float estimateFrequency ();
+
      
 
     //==============================================================================

@@ -7,12 +7,14 @@
 */
 
 #include "PluginProcessor.h"
+#include "Utils.h"
 
 //==============================================================================
 FretboardQuizAudioProcessor::FretboardQuizAudioProcessor()
         : AudioProcessor (BusesProperties().withInput  ("Input",     juce::AudioChannelSet::stereo())),
           forwardFFT(fftOrder),
-          window (fftSize, juce::dsp::WindowingFunction<float>::blackman)
+          window (fftSize, juce::dsp::WindowingFunction<float>::blackman),
+          rng(2093475)
 {
 }
 
@@ -32,8 +34,7 @@ FretboardQuizAudioProcessor::~FretboardQuizAudioProcessor()
 //==============================================================================
 void FretboardQuizAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    m_currentTarget = generateNote();
 }
 
 void FretboardQuizAudioProcessor::releaseResources()
@@ -49,21 +50,9 @@ void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
     if (buffer.getNumChannels() > 0)
     {
         // for now just assume first channel
@@ -73,7 +62,7 @@ void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
 
             if (nextFFTBlockReady)
             {
-                estimateFrequency();
+                checkPitch ();
                 nextFFTBlockReady = false;
             }
         }
@@ -81,7 +70,23 @@ void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     }
 }
 
-void FretboardQuizAudioProcessor::estimateFrequency()
+void FretboardQuizAudioProcessor::checkPitch ()
+{
+    const float freq = estimateFrequency ();
+    const int note = Utils::midiNoteFromFreq (freq);
+    m_currentNote = juce::MidiMessage::getMidiNoteName (note, true, false, 3);
+
+    if (m_currentNote.equalsIgnoreCase (m_currentTarget)) 
+    {
+        m_currentTarget = generateNote ();
+    }
+}
+
+inline juce::String FretboardQuizAudioProcessor::generateNote() { 
+    return juce::MidiMessage::getMidiNoteName (rng.nextInt(128),true, false, 3); 
+}
+
+float FretboardQuizAudioProcessor::estimateFrequency ()
 {
     // first apply a windowing function to our data
     window.multiplyWithWindowingTable (fftData, fftSize);       
@@ -99,18 +104,18 @@ void FretboardQuizAudioProcessor::estimateFrequency()
             maxIdx = i;
        }
     }
-    m_frequency = (getSampleRate() * maxIdx) / fftSize;
-    int midinote = log(m_frequency/440.0)/log(2) * 12 + 69;
+
+    return Utils::freqFromIndex(maxIdx, fftSize, getSampleRate());
 }
 
 
 void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
 {
     // if the fifo contains enough data, set a flag to say
-    // that the next frame should now be rendered..
-    if (fifoIndex == fftSize)               // [11]
+    // that we have enough samples to run the FFT
+    if (fifoIndex == fftSize)               
     {
-        if (! nextFFTBlockReady)            // [12]
+        if (! nextFFTBlockReady)            
         {
             juce::zeromem (fftData, sizeof (fftData));
             memcpy (fftData, fifo, sizeof (fifo));
@@ -120,7 +125,7 @@ void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
         fifoIndex = 0;
     }
 
-    fifo[fifoIndex++] = sample;             // [12]
+    fifo[fifoIndex++] = sample;             
 }
 
 //==============================================================================
