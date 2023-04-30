@@ -36,8 +36,9 @@ public:
     //==============================================================================
     //juce::AudioProcessorEditor* createEditor() override            { return new juce::GenericAudioProcessorEditor (*this); }
     juce::AudioProcessorEditor* createEditor() override;
+
     bool hasEditor() const override                                { return true; }
-    const juce::String getName() const override                    { return "Fretboard Test"; }
+    const juce::String getName() const override                    { return "FretboardQuiz"; }
     bool acceptsMidi() const override                              { return false; }
     bool producesMidi() const override                             { return false; }
     double getTailLengthSeconds() const override                   { return 0.0; }

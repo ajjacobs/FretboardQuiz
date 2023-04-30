@@ -15,7 +15,7 @@ FretboardQuizAudioProcessor::FretboardQuizAudioProcessor()
         : AudioProcessor (BusesProperties().withInput  ("Input",     juce::AudioChannelSet::stereo())),
           forwardFFT(fftOrder),
           window (fftSize, juce::dsp::WindowingFunction<float>::blackman),
-          rng(2093475)
+          rng()
 {
 }
 
@@ -71,6 +71,25 @@ void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     }
 }
 
+void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
+{
+    // if the fifo contains enough data, set a flag to say
+    // that we have enough samples to run the FFT
+    if (fifoIndex == fftSize)               
+    {
+        if (! nextFFTBlockReady)            
+        {
+            juce::zeromem (fftData, sizeof (fftData));
+            memcpy (fftData, fifo, sizeof (fifo));
+            nextFFTBlockReady = true;
+        }
+
+        fifoIndex = 0;
+    }
+
+    fifo[fifoIndex++] = sample;             
+}
+
 void FretboardQuizAudioProcessor::checkPitch ()
 {
     const float freq = estimateFrequency ();
@@ -83,7 +102,8 @@ void FretboardQuizAudioProcessor::checkPitch ()
     }
 }
 
-inline juce::String FretboardQuizAudioProcessor::generateNote() { 
+inline juce::String FretboardQuizAudioProcessor::generateNote() 
+{ 
     return juce::MidiMessage::getMidiNoteName (rng.nextInt(128),true, false, 3); 
 }
 
@@ -109,25 +129,6 @@ float FretboardQuizAudioProcessor::estimateFrequency ()
     return Utils::freqFromIndex(maxIdx, fftSize, getSampleRate());
 }
 
-
-void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
-{
-    // if the fifo contains enough data, set a flag to say
-    // that we have enough samples to run the FFT
-    if (fifoIndex == fftSize)               
-    {
-        if (! nextFFTBlockReady)            
-        {
-            juce::zeromem (fftData, sizeof (fftData));
-            memcpy (fftData, fifo, sizeof (fifo));
-            nextFFTBlockReady = true;
-        }
-
-        fifoIndex = 0;
-    }
-
-    fifo[fifoIndex++] = sample;             
-}
 
 juce::AudioProcessorEditor* FretboardQuizAudioProcessor::createEditor()
 {
