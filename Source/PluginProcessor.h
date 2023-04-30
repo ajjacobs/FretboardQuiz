@@ -77,12 +77,12 @@ private:
     int fifoIndex = 0;                              
     bool nextFFTBlockReady = false;                 
     juce::String m_currentTarget;
-    juce::String m_currentNote; 
+    juce::String m_currentNote = "asdf"; 
     juce::Random rng;
 
 
     juce::String generateNote();
-    void pushNextSampleIntoFifo (float) noexcept;
+    void pushNextSampleIntoFifo (const float&) noexcept;
     void checkPitch ();
     float estimateFrequency ();
 

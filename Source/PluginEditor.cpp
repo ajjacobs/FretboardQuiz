@@ -29,10 +29,11 @@ void FretboardQuizAudioProcessorEditor::paint (juce::Graphics& g)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
     g.setColour (juce::Colours::white);
-    g.setFont (32.0f);
+    g.setFont (64.0f);
 
-    g.drawFittedText (audioProcessor.getCurrentTarget(), getLocalBounds(), juce::Justification::centredLeft, 1);
-    g.drawFittedText (audioProcessor.getCurrentNote(), getLocalBounds(), juce::Justification::centredRight, 1);
+    g.drawFittedText (audioProcessor.getCurrentTarget()+ "   |   " + audioProcessor.getCurrentNote(), getLocalBounds(), juce::Justification::centred, 1);
+    //g.drawFittedText (audioProcessor.getCurrentTarget(), getLocalBounds(), juce::Justification::centredLeft, 1);
+    //g.drawFittedText (audioProcessor.getCurrentNote(), getLocalBounds(), juce::Justification::centredRight, 1);
 }
 
 void FretboardQuizAudioProcessorEditor::resized()

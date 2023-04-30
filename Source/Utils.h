@@ -25,7 +25,7 @@ namespace Utils{
     /// @param nSamples    :: number of samples in the array
     /// @param sampleRate  :: Current sample rate
     /// @return associated frequency
-    inline float freqFromIndex (const int& index, const int& nSamples, const float& sampleRate) 
+    inline float freqFromIndex (const float& index, const float& nSamples, const float& sampleRate) 
     {
       // SampleRate / nSamples = samples/s * 1/samples = 1/s = Hz
       return (sampleRate * index) / nSamples;

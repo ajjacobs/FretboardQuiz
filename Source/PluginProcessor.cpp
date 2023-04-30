@@ -12,7 +12,7 @@
 
 //==============================================================================
 FretboardQuizAudioProcessor::FretboardQuizAudioProcessor()
-        : AudioProcessor (BusesProperties().withInput  ("Input",     juce::AudioChannelSet::stereo())),
+        : AudioProcessor (BusesProperties().withInput  ("Input",     juce::AudioChannelSet::mono())),
           forwardFFT(fftOrder),
           window (fftSize, juce::dsp::WindowingFunction<float>::blackman),
           rng()
@@ -51,14 +51,16 @@ void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
     if (buffer.getNumChannels() > 0)
     {
         // for now just assume first channel
         for ( auto j=0; j < buffer.getNumSamples(); ++j)
         {
+            //juce::String s = juce::String::formatted(
+                    //"channel 0: {%f}",
+                    //buffer.getReadPointer(0)[j]);
+            //DBG(s);
+
             pushNextSampleIntoFifo(buffer.getReadPointer(0)[j]);
 
             if (nextFFTBlockReady)
@@ -71,7 +73,7 @@ void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     }
 }
 
-void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (float sample) noexcept
+void FretboardQuizAudioProcessor::pushNextSampleIntoFifo (const float& sample) noexcept
 {
     // if the fifo contains enough data, set a flag to say
     // that we have enough samples to run the FFT
@@ -94,7 +96,12 @@ void FretboardQuizAudioProcessor::checkPitch ()
 {
     const float freq = estimateFrequency ();
     const int note = Utils::midiNoteFromFreq (freq);
-    m_currentNote = juce::MidiMessage::getMidiNoteName (note, true, false, 3);
+    const juce::String notename = juce::MidiMessage::getMidiNoteName (note, true, false, 3);
+    m_currentNote = notename.isEmpty() ? m_currentNote : notename;
+
+    //DBG(juce::String::formatted("note: {%i}", note));
+    //DBG(juce::String::formatted("frequency: {%f}", freq));
+    //DBG("======");
 
     if (m_currentNote.equalsIgnoreCase (m_currentTarget)) 
     {
@@ -104,7 +111,7 @@ void FretboardQuizAudioProcessor::checkPitch ()
 
 inline juce::String FretboardQuizAudioProcessor::generateNote() 
 { 
-    return juce::MidiMessage::getMidiNoteName (rng.nextInt(128),true, false, 3); 
+    return juce::MidiMessage::getMidiNoteName (rng.nextInt(128), true, false, 3); 
 }
 
 float FretboardQuizAudioProcessor::estimateFrequency ()
@@ -115,16 +122,25 @@ float FretboardQuizAudioProcessor::estimateFrequency ()
     // then render our FFT data..
     forwardFFT.performFrequencyOnlyForwardTransform (fftData);  
 
-    float maxAmp = fftData[0]; int maxIdx = 0;
-    for (int i = 1; i < scopeSize; ++i)                         
+    const auto mindB = -100.0f; const auto maxdB =    0.0f;
+
+    float maxAmp = -1.0; int maxIdx = -1;
+    for (int i = 0; i < fftSize; ++i)                         
     {
-        const float dat = fftData[i];
-        if (dat > maxAmp) 
+        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) scopeSize) * 0.2f);
+        auto fftDataIndex = juce::jlimit (0, fftSize / 2, (int) (skewedProportionX * (float) fftSize * 0.5f));
+        auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (fftData[fftDataIndex])
+                                                            - juce::Decibels::gainToDecibels ((float) fftSize)),
+                                    mindB, maxdB, 0.0f, 1.0f);
+        if (level > maxAmp) 
         {
-            maxAmp = dat;
+            maxAmp = level;
             maxIdx = i;
-       }
+        }
     }
+
+    //DBG(juce::String::formatted("maxAmp: {%f}", maxAmp));
+    //DBG(juce::String::formatted("maxIdx: {%i}", maxIdx));
 
     return Utils::freqFromIndex(maxIdx, fftSize, getSampleRate());
 }
