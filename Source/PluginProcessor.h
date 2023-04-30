@@ -76,7 +76,7 @@ private:
 
 
     juce::String generateNote();
-    void pushNextSampleIntoFifo (float);
+    void pushNextSampleIntoFifo (float) noexcept;
     void checkPitch ();
     float estimateFrequency ();
 
