@@ -14,15 +14,19 @@
 //==============================================================================
 /**
 */
-class FretboardQuizAudioProcessorEditor  : public juce::AudioProcessorEditor
+class FretboardQuizAudioProcessorEditor  : public juce::AudioProcessorEditor,
+                                           private juce::Timer
 {
 public:
     FretboardQuizAudioProcessorEditor (FretboardQuizAudioProcessor&);
-    ~FretboardQuizAudioProcessorEditor() override;
+    ~FretboardQuizAudioProcessorEditor() override { };
 
     //==============================================================================
     void paint (juce::Graphics&) override;
-    void resized() override;
+
+    void resized () override       { }
+    void timerCallback () override { repaint(); }
+
 
 private:
     // This reference is provided as a quick way for your editor to

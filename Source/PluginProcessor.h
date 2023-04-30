@@ -21,11 +21,11 @@ class FretboardQuizAudioProcessor  : public juce::AudioProcessor
 public:
     //==============================================================================
     FretboardQuizAudioProcessor();
-    ~FretboardQuizAudioProcessor() override;
+    ~FretboardQuizAudioProcessor() override { };
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-    void releaseResources() override;
+    void releaseResources() override { };
 
    #ifndef JucePlugin_PreferredChannelConfigurations
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
@@ -34,7 +34,6 @@ public:
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==============================================================================
-    //juce::AudioProcessorEditor* createEditor() override            { return new juce::GenericAudioProcessorEditor (*this); }
     juce::AudioProcessorEditor* createEditor() override;
 
     bool hasEditor() const override                                { return true; }
@@ -62,8 +61,7 @@ public:
     enum
     {
         fftOrder  = 11,            
-        fftSize   = 1 << fftOrder, 
-        scopeSize = 1024           
+        fftSize   = 1 << fftOrder
     };
 
 private:
@@ -77,7 +75,7 @@ private:
     int fifoIndex = 0;                              
     bool nextFFTBlockReady = false;                 
     juce::String m_currentTarget;
-    juce::String m_currentNote = "asdf"; 
+    juce::String m_currentNote;
     juce::Random rng;
 
 
@@ -85,7 +83,6 @@ private:
     void pushNextSampleIntoFifo (const float&) noexcept;
     void checkPitch ();
     float estimateFrequency ();
-
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FretboardQuizAudioProcessor)

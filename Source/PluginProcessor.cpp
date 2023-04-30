@@ -26,24 +26,11 @@ bool FretboardQuizAudioProcessor::isBusesLayoutSupported (const BusesLayout& lay
                 && ! layouts.getMainInputChannelSet().isDisabled();
 }
 
-
-FretboardQuizAudioProcessor::~FretboardQuizAudioProcessor()
-{
-}
-
-//==============================================================================
 //==============================================================================
 void FretboardQuizAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     m_currentTarget = generateNote();
 }
-
-void FretboardQuizAudioProcessor::releaseResources()
-{
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
-}
-
 
 void FretboardQuizAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
@@ -97,11 +84,7 @@ void FretboardQuizAudioProcessor::checkPitch ()
     const float freq = estimateFrequency ();
     const int note = Utils::midiNoteFromFreq (freq);
     const juce::String notename = juce::MidiMessage::getMidiNoteName (note, true, false, 3);
-    m_currentNote = notename.isEmpty() ? m_currentNote : notename;
-
-    //DBG(juce::String::formatted("note: {%i}", note));
-    //DBG(juce::String::formatted("frequency: {%f}", freq));
-    //DBG("======");
+    m_currentNote = notename;
 
     if (m_currentNote.equalsIgnoreCase (m_currentTarget)) 
     {
@@ -122,16 +105,11 @@ float FretboardQuizAudioProcessor::estimateFrequency ()
     // then render our FFT data..
     forwardFFT.performFrequencyOnlyForwardTransform (fftData);  
 
-    const auto mindB = -100.0f; const auto maxdB =    0.0f;
 
     float maxAmp = -1.0; int maxIdx = -1;
     for (int i = 0; i < fftSize; ++i)                         
     {
-        auto skewedProportionX = 1.0f - std::exp (std::log (1.0f - (float) i / (float) scopeSize) * 0.2f);
-        auto fftDataIndex = juce::jlimit (0, fftSize / 2, (int) (skewedProportionX * (float) fftSize * 0.5f));
-        auto level = juce::jmap (juce::jlimit (mindB, maxdB, juce::Decibels::gainToDecibels (fftData[fftDataIndex])
-                                                            - juce::Decibels::gainToDecibels ((float) fftSize)),
-                                    mindB, maxdB, 0.0f, 1.0f);
+        const auto level = abs(fftData[i]);
         if (level > maxAmp) 
         {
             maxAmp = level;
@@ -139,18 +117,13 @@ float FretboardQuizAudioProcessor::estimateFrequency ()
         }
     }
 
-    //DBG(juce::String::formatted("maxAmp: {%f}", maxAmp));
-    //DBG(juce::String::formatted("maxIdx: {%i}", maxIdx));
-
     return Utils::freqFromIndex(maxIdx, fftSize, getSampleRate());
 }
-
 
 juce::AudioProcessorEditor* FretboardQuizAudioProcessor::createEditor()
 {
     return new FretboardQuizAudioProcessorEditor(*this);
 }
-
 
 //==============================================================================
 // This creates new instances of the plugin..
