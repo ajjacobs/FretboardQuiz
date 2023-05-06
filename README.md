@@ -8,8 +8,9 @@ most DAWs.
 - [ ] The plugin works in the AudioPluginHost, but the stand-alone application doesn't seem to properly pick up the input audio...
 
 # TODO
-- [ ] Implement a solution to avoid false readings based on noise. Perhaps something like, the estimated frequency must 
-      persist for some minimum number of cycles, or something to that effect.
+- [x] Implement a solution to avoid false readings based on noise.
+      - May 6, 2023: added elementary noise gating. 
+- [ ] Implement more sophisticated noisegate
 - [ ] More sophisticated pitch detection. Right now I'm just doing a rudimentary estimate of 
       the fundamental frequency using a fourier transform. That being said, it seems to work surprisingly 
       well in practice, due to guitar occupying a pretty mid frequency range.
