@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="VhTKyj" name="FretboardQuiz" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="ajjacobs"
+              companyWebsite="ajjacobs.github.io/homepage">
   <MAINGROUP id="WIz2kX" name="FretboardQuiz">
     <GROUP id="{DBD0ACE4-56B7-FAA1-1795-AA809D160CED}" name="Source">
       <FILE id="tFIvyQ" name="PluginEditor.cpp" compile="1" resource="0"
