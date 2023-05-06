@@ -17,6 +17,7 @@ FretboardQuizAudioProcessor::FretboardQuizAudioProcessor()
           window (fftSize, juce::dsp::WindowingFunction<float>::blackman),
           rng()
 {
+    addParameter (threshold = new juce::AudioParameterFloat ("threshold", "Threshold", 0.0f, 30.0f, 15.0f));
 }
 
 bool FretboardQuizAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const 
@@ -116,6 +117,10 @@ float FretboardQuizAudioProcessor::estimateFrequency ()
             maxIdx = i;
         }
     }
+
+    // hand-tuned threshold
+    if (maxAmp < threshold->get())
+        return 0.0f;
 
     return Utils::freqFromIndex(maxIdx, fftSize, getSampleRate());
 }
