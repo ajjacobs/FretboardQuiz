@@ -50,8 +50,19 @@ public:
     bool isVST2() const noexcept                                   { return (wrapperType == wrapperType_VST); }
 
     //==============================================================================
-    void getStateInformation (juce::MemoryBlock& destData) override        {};
-    void setStateInformation (const void* data, int sizeInBytes) override  {};
+    void getStateInformation (juce::MemoryBlock& destData) override
+    {
+        juce::MemoryOutputStream stream (destData, true);
+
+        stream.writeFloat (*threshold);
+    }
+
+    void setStateInformation (const void* data, int sizeInBytes) override
+    {
+        juce::MemoryInputStream stream (data, static_cast<size_t> (sizeInBytes), false);
+
+        threshold->setValueNotifyingHost (stream.readFloat());
+    }
 
     //==============================================================================
     const juce::String& getCurrentTarget() { return m_currentTarget; }
@@ -69,6 +80,9 @@ private:
     // fundamental frequency to get things working.
     juce::dsp::FFT forwardFFT;                      
     juce::dsp::WindowingFunction<float> window;     
+
+    // ignore pitch estimates when the amplitude is below this threshold
+    juce::AudioParameterFloat* threshold;
 
     float fifo [fftSize];                           
     float fftData [2 * fftSize];                    
